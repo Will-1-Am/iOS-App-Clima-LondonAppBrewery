@@ -12,6 +12,8 @@ class WeatherDataModel {
 
     //Declare your model variables here
     var temperature : Int = 0
+    var hTemp : Int = 0
+    var lTemp : Int = 0 
     var condition : Int = 0
     var city : String = ""
     var country : String = ""
