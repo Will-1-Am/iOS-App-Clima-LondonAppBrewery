@@ -13,12 +13,20 @@ class WeatherDataModel {
     //Declare your model variables here
     var temperature : Int = 0
     var hTemp : Int = 0
-    var lTemp : Int = 0 
+    var lTemp : Int = 0
     var condition : Int = 0
     var city : String = ""
     var country : String = ""
     var weatherIconName : String = ""
     var date : String = ""
+    
+    
+    var pressure : String = ""
+    var humidity : String = ""
+    var wSpeed : String = ""
+    var wGust : String = ""
+    var wDirection : String = ""
+    
     
     var fConditionDay1 : Int = 0 /*forecast condition for forecast Day1 */
     var fConditionDay2 : Int = 0

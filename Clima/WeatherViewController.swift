@@ -54,6 +54,15 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     @IBOutlet weak var day5Label: UILabel!
     
     
+    @IBOutlet weak var wSpeed: UILabel!
+    @IBOutlet weak var wGusts: UILabel!
+    @IBOutlet weak var wDirection: UILabel!
+    @IBOutlet weak var humidity: UILabel!
+    @IBOutlet weak var pressure: UILabel!
+    
+    
+    
+    
     
     
     override func viewDidLoad() {
@@ -121,17 +130,30 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
         if let tempResult = json["main"]["temp"].double {
             let highTempResult = json["main"]["temp_max"].double
             let lowTempResult = json["main"]["temp_min"].double
+            let pressure = json["main"]["pressure"].stringValue
+            let humidity = json["main"]["humidity"].stringValue
+            let wSpeed = json["wind"]["speed"].stringValue
+            let wGust = json["wind"]["gust"].stringValue
+            let wDirection = json["wind"]["deg"].stringValue
+            
+            print("Pressure: \(String(describing:  pressure )), Humidity: \(String(describing: humidity)), Wind Speed: \(String(describing: wSpeed )), Gusting: \(String(describing: wGust )), Wind Direction \(String(describing: wDirection ))" )
+            
                 weatherDataModel.temperature = Int(tempResult - 273.15)
     //FIXME: The high/low temps here represent those for the particular moment that the data was retrieved - the high/low data needs to be extracted from the forecast information and will have to utilize the code for determining the min/max
                 weatherDataModel.hTemp = Int(highTempResult! - 273.15)
                 weatherDataModel.lTemp = Int(lowTempResult! - 273.15)
-                
+            
+                weatherDataModel.condition = json["weather"][0]["id"].intValue
                 weatherDataModel.city = json["name"].stringValue
             
                 weatherDataModel.country = json["sys"]["country"].stringValue
                     /*print("City: \(weatherDataModel.city) Country: \(weatherDataModel.country)")*/
             
-                weatherDataModel.condition = json["weather"][0]["id"].intValue
+                weatherDataModel.wSpeed = wSpeed
+                weatherDataModel.wGust = wGust
+                weatherDataModel.wDirection = wDirection
+                weatherDataModel.humidity = humidity
+                weatherDataModel.pressure = pressure
             
                 weatherDataModel.weatherIconName = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.condition)
             
@@ -271,7 +293,12 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     
     func updateUIWithWeatherData() {
         dateLabel.text = weatherDataModel.date
-        cityLabel.text = weatherDataModel.city + ", " + weatherDataModel.country
+        cityLabel.text = weatherDataModel.city + ", " + weatherDataModel.country /* + ", " weatherDataModel. */
+        wSpeed.text = weatherDataModel.wSpeed + "m/s"
+        wGusts.text = weatherDataModel.wGust + "m/s"
+        wDirection.text = weatherDataModel.wDirection + "°"
+        humidity.text = weatherDataModel.humidity + "%"
+        pressure.text = weatherDataModel.pressure + "hPa"
         
         if tempScale == "Celsius" {
             temperatureLabel.text = "\(weatherDataModel.temperature)°"
