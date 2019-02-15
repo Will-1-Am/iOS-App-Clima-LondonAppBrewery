@@ -15,20 +15,19 @@ import SwiftyJSON
 class WeatherViewController: UIViewController, CLLocationManagerDelegate, ChangeCityDelegate {
     
     //Constants
-    let WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather"
-    let FORECAST_URL = "http://api.openweathermap.org/data/2.5/forecast"
+    let WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
+    let FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
 //   API for 5 day forcast is: api.openweathermap.org/data/2.5/forecast?id={city ID}
 //       {city ID} is obtainable from List of city ID city.list.json.gz can be downloaded here http://bulk.openweathermap.org/sample/
 //    Use http://jsoneditoronline.org/ to understand structure of JSON
     let APP_ID = "da1a2f93a00b42cad966a1681df14d17"
+    let cityID = "8133876"
     
 
     //TODO: Declare instance variables here
     let locationManager = CLLocationManager()
     let weatherDataModel = WeatherDataModel()
     var tempScale : String = "Celsius"
-    
-    
 
     
     //Pre-linked IBOutlets
@@ -61,12 +60,10 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     @IBOutlet weak var pressure: UILabel!
     
     
-    
-    
-    
-    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+//        getWeatherData()
         
         forecastLabel.isHidden = true
         //TODO:Set up the location manager here.
@@ -75,10 +72,33 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
         
-        
     }
     
-    
+//    func getWeather() {
+//        let wurl = WEATHER_URL + "?id=" + cityID + "&APPID=" + APP_ID
+////        print("wurl = \(wurl)")
+//
+//        URLSession.shared.dataTask(with: URL(string: wurl)!, completionHandler: { (data, response, error) -> Void in
+//            guard let data = data else { return }
+//
+//            if let error = error {
+//                print(error)
+//                return
+//            }
+//
+////: FIXME - something below in weatherJSON needs to be defined as well as in the DispatchQueue
+//            do {
+//                let decoder = JSONDecoder()
+//                let weatherJSON = try decoder.decode(something, from: data)
+//
+//                DispatchQueue.main.async (excute: { () -> Void in
+//                    completionHandler(something)
+//                })
+//            } catch let jsonErr {
+//                print(jsonErr)
+//            }
+//        }).resume()
+//    }
     
     //MARK: - Networking
     /***************************************************************/
@@ -92,7 +112,7 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
 //                print("Success! Got the basic weather data.")
                 
                 let weatherJSON : JSON = JSON(response.result.value!)
-                print(weatherJSON)
+//                print("weatherJSON = \n \(weatherJSON)")
                 
                 self.updateWeatherData(json: weatherJSON)
             }
@@ -110,7 +130,9 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
             if response.result.isSuccess {
 //                print("Forecast information on-hand!")
                 let forecastJSON : JSON = JSON(response.result.value!)
-                print(forecastJSON)
+                print("forecastJSON = \n \(forecastJSON)")
+                
+//                forecastJSON.array
                 
                 self.updateForecastData(json: forecastJSON)
             }
@@ -128,20 +150,20 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     func updateWeatherData(json : JSON) {
      
         if let tempResult = json["main"]["temp"].double {
-            let highTempResult = json["main"]["temp_max"].double
-            let lowTempResult = json["main"]["temp_min"].double
+            let highTempResult = json["main"]["temp_max"].double ?? 0   //Added nil-coalescing 10/12/2018
+            let lowTempResult = json["main"]["temp_min"].double ?? 0    //Added nil-coalescing 10/12/2018
             let pressure = json["main"]["pressure"].stringValue
             let humidity = json["main"]["humidity"].stringValue
-            let wSpeed = json["wind"]["speed"].stringValue
-            let wGust = json["wind"]["gust"].stringValue
-            let wDirection = json["wind"]["deg"].stringValue
+            let wSpeed = json["wind"]["speed"].float ?? 0   //Added nil-coalescing 10/12/2018
+            let wGust = json["wind"]["gust"].float ?? 0     //Added nil-coalescing 10/12/2018
+            let wDirection = json["wind"]["deg"].int ?? 0   //Added nil-coalescing 10/12/2018
             
             print("Pressure: \(String(describing:  pressure )), Humidity: \(String(describing: humidity)), Wind Speed: \(String(describing: wSpeed )), Gusting: \(String(describing: wGust )), Wind Direction \(String(describing: wDirection ))" )
             
                 weatherDataModel.temperature = Int(tempResult - 273.15)
     //FIXME: The high/low temps here represent those for the particular moment that the data was retrieved - the high/low data needs to be extracted from the forecast information and will have to utilize the code for determining the min/max
-                weatherDataModel.hTemp = Int(highTempResult! - 273.15)
-                weatherDataModel.lTemp = Int(lowTempResult! - 273.15)
+            weatherDataModel.hTemp = Int(highTempResult - 273.15)
+            weatherDataModel.lTemp = Int(lowTempResult - 273.15)
             
                 weatherDataModel.condition = json["weather"][0]["id"].intValue
                 weatherDataModel.city = json["name"].stringValue
@@ -149,9 +171,9 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
                 weatherDataModel.country = json["sys"]["country"].stringValue
                     /*print("City: \(weatherDataModel.city) Country: \(weatherDataModel.country)")*/
             
-                weatherDataModel.wSpeed = wSpeed
-                weatherDataModel.wGust = wGust
-                weatherDataModel.wDirection = wDirection
+                weatherDataModel.wSpeed = (wSpeed ?? 0)!
+                weatherDataModel.wGust = (wGust ?? 0)!
+                weatherDataModel.wDirection = (wDirection ?? nil)!
                 weatherDataModel.humidity = humidity
                 weatherDataModel.pressure = pressure
             
@@ -294,11 +316,13 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     func updateUIWithWeatherData() {
         dateLabel.text = weatherDataModel.date
         cityLabel.text = weatherDataModel.city + ", " + weatherDataModel.country /* + ", " weatherDataModel. */
-        wSpeed.text = weatherDataModel.wSpeed + "m/s"
-        wGusts.text = weatherDataModel.wGust + "m/s"
-        wDirection.text = weatherDataModel.wDirection + "°"
+        let windSpeed = Int(weatherDataModel.wSpeed*3.6)
+        let windGusts = Int(weatherDataModel.wGust*3.6)
+        wSpeed.text = "\(windSpeed) kph"
+        wGusts.text = "\(windGusts) kph"
+        wDirection.text = "\(weatherDataModel.wDirection)°"
         humidity.text = weatherDataModel.humidity + "%"
-        pressure.text = weatherDataModel.pressure + "hPa"
+        pressure.text = weatherDataModel.pressure + " hPa"
         
         if tempScale == "Celsius" {
             temperatureLabel.text = "\(weatherDataModel.temperature)°"
@@ -345,6 +369,7 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
             
             getWeatherData(url : WEATHER_URL, parameters : params)
             getForecastData(url : FORECAST_URL, parameters : params)
+            
         }
         
     }

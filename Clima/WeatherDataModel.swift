@@ -23,9 +23,9 @@ class WeatherDataModel {
     
     var pressure : String = ""
     var humidity : String = ""
-    var wSpeed : String = ""
-    var wGust : String = ""
-    var wDirection : String = ""
+    var wSpeed : Float = 0
+    var wGust : Float = 0
+    var wDirection : Int = 0
     
     
     var fConditionDay1 : Int = 0 /*forecast condition for forecast Day1 */
@@ -70,7 +70,7 @@ class WeatherDataModel {
         case 801...804 :
             return "cloudy2"
         
-        case 900...903, 905...1000  :
+        case 900..<903, 905...1000 :
             return "tstorm3"
         
         case 903 :
@@ -82,6 +82,5 @@ class WeatherDataModel {
         default :
             return "dunno"
         }
-
     }
 }
