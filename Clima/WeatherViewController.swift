@@ -11,6 +11,7 @@ import UIKit
 import CoreLocation
 import Alamofire
 import SwiftyJSON
+import Instabug
 
 class WeatherViewController: UIViewController, CLLocationManagerDelegate, ChangeCityDelegate {
     
