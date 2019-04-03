@@ -172,9 +172,9 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
                 weatherDataModel.country = json["sys"]["country"].stringValue
                     /*print("City: \(weatherDataModel.city) Country: \(weatherDataModel.country)")*/
             
-                weatherDataModel.wSpeed = (wSpeed ?? 0)!
-                weatherDataModel.wGust = (wGust ?? 0)!
-                weatherDataModel.wDirection = (wDirection ?? nil)!
+                weatherDataModel.wSpeed = wSpeed
+                weatherDataModel.wGust = wGust
+                weatherDataModel.wDirection = wDirection
                 weatherDataModel.humidity = humidity
                 weatherDataModel.pressure = pressure
             
