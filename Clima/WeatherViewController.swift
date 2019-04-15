@@ -15,12 +15,16 @@ import Instabug
 
 class WeatherViewController: UIViewController, CLLocationManagerDelegate, ChangeCityDelegate {
     
-    //Constants
+    //MARK: Constants
     let WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
     let FORECAST_URL = "https://api.openweathermap.org/data/2.5/forecast"
-//   API for 5 day forcast is: api.openweathermap.org/data/2.5/forecast?id={city ID}
-//       {city ID} is obtainable from List of city ID city.list.json.gz can be downloaded here http://bulk.openweathermap.org/sample/
-//    Use http://jsoneditoronline.org/ to understand structure of JSON
+
+/*:
+    API for 5 day forcast is: api.openweathermap.org/data/2.5/forecast?id={city ID}
+       {city ID} is obtainable from List of city ID city.list.json.gz can be downloaded here http://bulk.openweathermap.org/sample/
+    Use http://jsoneditoronline.org/ to understand structure of JSON
+ */
+    
     let APP_ID = "da1a2f93a00b42cad966a1681df14d17"
     let cityID = "8133876"
     
@@ -30,20 +34,16 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     let weatherDataModel = WeatherDataModel()
     
     var currentDate: String = ""
-    var forecastDates = Array<String>()
+//    var forecastDates = Array<String>()
     var lowTempsGrouped: [Float] = []
     var highTempsGrouped = [Float]()
 
-    
     var tempScale: String = "Celsius"
 
     
     //Pre-linked IBOutlets
     @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var tempScaleSwitch: UISwitch!
-    @IBOutlet weak var temperatureLabel: UILabel!
-    @IBOutlet weak var hTemp: UILabel!
-    @IBOutlet weak var lTemp: UILabel!
     
     @IBOutlet weak var wSpeed: UILabel!
     @IBOutlet weak var wGusts: UILabel!
@@ -51,15 +51,19 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     @IBOutlet weak var humidity: UILabel!
     @IBOutlet weak var pressure: UILabel!
     
+    @IBOutlet weak var temperatureLabel: UILabel!
+    @IBOutlet weak var hTemp: UILabel!
+    @IBOutlet weak var lTemp: UILabel!
+    
     @IBOutlet weak var weatherIcon: UIImageView!
     @IBOutlet weak var cityLabel: UILabel!
 
     @IBOutlet weak var forecastLabel: UILabel!
-    
     @IBOutlet weak var iconDay1: UIImageView!
     @IBOutlet weak var day1Label: UILabel!
     @IBOutlet weak var iconDay2: UIImageView!
     @IBOutlet weak var day2Label: UILabel!
+    
     @IBOutlet weak var iconDay3: UIImageView!
     @IBOutlet weak var day3Label: UILabel!
     @IBOutlet weak var iconDay4: UIImageView!
@@ -110,14 +114,14 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     /***************************************************************/
     
     //Write the getWeatherData method here:
-    func getWeatherData(url : String, parameters : [String : String]) {
+    func getWeatherData(url: String, parameters: [String : String]) {
         
         Alamofire.request(url, method: .get, parameters: parameters).responseJSON {
             response in
             if response.result.isSuccess {
 //                print("Success! Got the basic weather data.")
                 
-                let weatherJSON : JSON = JSON(response.result.value!)
+                let weatherJSON: JSON = JSON(response.result.value!)
 //                print("weatherJSON = \n \(weatherJSON)")
                 
                 self.updateWeatherData(from: weatherJSON)
@@ -155,13 +159,15 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     //Write the updateWeatherData method here:
     func updateWeatherData(from weatherJSON: JSON) {
      
-        if let tempResult = weatherJSON["main"]["temp"].float {
+        if let temp = weatherJSON["main"]["temp"].float {
             let highTempResult = weatherJSON["main"]["temp_max"].float ?? 0//Added nil-coalescing 10/12/2018
             highTempsGrouped += [highTempResult]
             
             let lowTempResult = weatherJSON["main"]["temp_min"].float ?? 0    //Added nil-coalescing 10/12/2018
             lowTempsGrouped += [lowTempResult]
+            
             print("from updateWeatherData: low: ", lowTempsGrouped, "high: ", highTempsGrouped)
+            
             let pressure = weatherJSON["main"]["pressure"].stringValue
             let humidity = weatherJSON["main"]["humidity"].stringValue
             let wSpeed = weatherJSON["wind"]["speed"].float ?? 0   //Added nil-coalescing 10/12/2018
@@ -172,7 +178,7 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
 
             print("From updateWeatherData, Pressure: \(String(describing:  pressure )), Humidity: \(String(describing: humidity)), Wind Speed: \(String(describing: wSpeed )), Gusting: \(String(describing: wGust )), Wind Direction \(String(describing: wDirection)), Date String \(weatherJSON["dt"]))" )
             
-                weatherDataModel.temperature = Int(tempResult - 273.15)
+                weatherDataModel.temperature = Int(temp - 273.15)
     //FIXME: The high/low temps here represent those for the particular moment that the data was retrieved - the high/low data needs to be extracted from the forecast information and will have to utilize the code for determining the min/max
 //                weatherDataModel.hTemp = Int(highTempResult - 273.15)
 //                weatherDataModel.lTemp = Int(lowTempResult - 273.15)
@@ -181,7 +187,9 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
                 weatherDataModel.city = weatherJSON["name"].stringValue
             
                 weatherDataModel.country = weatherJSON["sys"]["country"].stringValue
-                    /*print("City: \(weatherDataModel.city) Country: \(weatherDataModel.country)")*/
+            /*:
+             print("City: \(weatherDataModel.city) Country: \(weatherDataModel.country)")
+             */
             
                 weatherDataModel.wSpeed = wSpeed
                 weatherDataModel.wGust = wGust
@@ -202,30 +210,35 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     //MARK: - Forecast JSON Parsing
     /***************************************************************/
     func updateForecastData(from forecastJSON: JSON) {
-        
-        if let fDateTime = forecastJSON["list"][0]["dt_txt"].string {
+        //MARK: Format date information
+        if let forecastDateTime: String = forecastJSON["list"][0]["dt_txt"].string {
+/*:
 //            print("First date returned with forecast is: \(fDate)")
 //            let dateIndex = fDateTime.firstIndex(of: " ") ?? fDateTime.endIndex
-            let fDate: String = extractDate(from: fDateTime)
+ */
+            let forecastDate: String = extractDate(from: forecastDateTime)
 
-            if let fDOW = getDOW(from: fDate){
-              weatherDataModel.date = currentDate + ", " + weatherDataModel.dayNames[fDOW]
-//                weatherDataModel.date = fDate + ", " + dayNames[fDOW]
-//                print(weatherDataModel.date)
-//                print("Day of Week is : \(dayNames[fDOW]) and the date is \(fDate)")
+            if let forecastDayOfWeek: Int = getDOW(from: forecastDate){
+              weatherDataModel.date = currentDate + ", " + weatherDataModel.dayNames[forecastDayOfWeek]
+/*:
+            weatherDataModel.date = fDate + ", " + dayNames[fDOW]
+            print(weatherDataModel.date)
+            print("Day of Week is : \(dayNames[fDOW]) and the date is \(fDate)")
+ */
             }else{
-                print("bad input")
+                print("Problem processing date information")
             }
             /*:
-             fItems is the number of forecast items to work with
+             forecastItems is the number of forecast items to work with
              */
-            var fItems: Int = forecastJSON["cnt"].intValue - 1
+            var forecastItems: Int = forecastJSON["cnt"].intValue - 1
+            var forecastDates = Array<String>()
             var lowTemps = [Float]()
             var highTemps = [Float]()
-            print("forecast items retrieved: ", fItems)
+            print("forecast items retrieved: ", forecastItems)
             
             //MARK: Form the forecastDates array from the json data
-            for item in 0...fItems {
+            for item in 0...forecastItems {
                 let dateString = String(returnDate(from: forecastJSON["list"][item]["dt"].int))
                 forecastDates += [dateString]
                 if let lowTemp = forecastJSON["list"][item]["main"]["temp_min"].float {
@@ -246,11 +259,18 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
                     lowTempsGrouped += [lowTemps[i]]
                     highTempsGrouped += [highTemps[i]]
                 } else {
-                    minMaxTempsByDay += [lowTempsGrouped.min()!, highTempsGrouped.max()!]
+                    if let minTemp = lowTempsGrouped.min() {
+                        minMaxTempsByDay += [minTemp]
+                    }
+                    if let maxTemp = highTempsGrouped.max() {
+                        minMaxTempsByDay += [maxTemp]
+                    }
+//                    minMaxTempsByDay += [lowTempsGrouped.min()!, highTempsGrouped.max()!]
                     print(lowTempsGrouped, highTempsGrouped, minMaxTempsByDay)
                     
                     lowTempsGrouped = []
                     highTempsGrouped = []
+                    print("from updateForecastData: i = : ", i, "lowTemps.count: ", lowTemps.count, "is array empty?: ", lowTemps.isEmpty)
                     lowTempsGrouped += [lowTemps[i]]
                     highTempsGrouped += [highTemps[i]]
                     rangeDate = forecastDate
@@ -265,7 +285,7 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
             weatherDataModel.lTemp = Int(minMaxTempsByDay[0] - 273.15)
             weatherDataModel.hTemp = Int(minMaxTempsByDay[1] - 273.15)
             
-            let fDayIncrement : Int = Int((fItems + 1) / 5)
+            let fDayIncrement : Int = Int((forecastItems + 1) / 5)
             forecastLabel.isHidden = false
             dateLabel.isHidden = false
             day1Label.isHidden = false
@@ -277,58 +297,58 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
             
             
             //MARK: Day 5 Information
-            weatherDataModel.fConditionDay5 = forecastJSON["list"][fItems]["weather"][0]["id"].intValue
+            weatherDataModel.fConditionDay5 = forecastJSON["list"][forecastItems]["weather"][0]["id"].intValue
             weatherDataModel.fweatherIconNameDay5 = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.fConditionDay5)
-            print("Day 5 date string: ",forecastJSON["list"][fItems]["dt_txt"].stringValue)
-            day5Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][fItems]["dt_txt"].stringValue)!]
+            print("Day 5 date string: ",forecastJSON["list"][forecastItems]["dt_txt"].stringValue)
+            day5Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][forecastItems]["dt_txt"].stringValue)!]
             
 //            print("Forecast Day5 code is: \(weatherDataModel.fConditionDay5) for \(String(describing: day5Label.text))")
 //
 //            print("Day 5 forecast item is : \(fItems)")
-            fItems -= fDayIncrement
+            forecastItems -= fDayIncrement
 //            print("Day 4 index is : \(fItems)")
             
             //MARK: Day 4 Information
-            weatherDataModel.fConditionDay4 = forecastJSON["list"][fItems]["weather"][0]["id"].intValue
+            weatherDataModel.fConditionDay4 = forecastJSON["list"][forecastItems]["weather"][0]["id"].intValue
             
             weatherDataModel.fweatherIconNameDay4 = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.fConditionDay4)
             
-            day4Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][fItems]["dt_txt"].stringValue)!]
+            day4Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][forecastItems]["dt_txt"].stringValue)!]
             
 //            print("Forecast Day4 code is: \(weatherDataModel.fConditionDay4) for \(String(describing: day4Label.text))")
             
-            fItems -= fDayIncrement
+            forecastItems -= fDayIncrement
 //            print("Day 3 index is : \(fItems)")
             
             //MARK: Day 3 Information
-            weatherDataModel.fConditionDay3 = forecastJSON["list"][fItems]["weather"][0]["id"].intValue
+            weatherDataModel.fConditionDay3 = forecastJSON["list"][forecastItems]["weather"][0]["id"].intValue
             
             weatherDataModel.fweatherIconNameDay3 = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.fConditionDay3)
             
-            day3Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][fItems]["dt_txt"].stringValue)!]
+            day3Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][forecastItems]["dt_txt"].stringValue)!]
             
 //            print("Forecast Day3 code is: \(weatherDataModel.fConditionDay3) for \(String(describing: day3Label.text))")
             
-            fItems -= fDayIncrement
+            forecastItems -= fDayIncrement
 //            print("Day 2 index is : \(fItems)")
             
             //MARK: Day 2 Information
-            weatherDataModel.fConditionDay2 = forecastJSON["list"][fItems]["weather"][0]["id"].intValue
+            weatherDataModel.fConditionDay2 = forecastJSON["list"][forecastItems]["weather"][0]["id"].intValue
             
             weatherDataModel.fweatherIconNameDay2 = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.fConditionDay2)
             
-            day2Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][fItems]["dt_txt"].stringValue)!]
+            day2Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][forecastItems]["dt_txt"].stringValue)!]
             
 //            print("Forecast Day2 code is: \(weatherDataModel.fConditionDay2) for \(String(describing: day2Label.text))")
-            fItems -= fDayIncrement
+            forecastItems -= fDayIncrement
 //            print("Day 1 index is : \(fItems)")
             
             //MARK: Day 1 Information
-            weatherDataModel.fConditionDay1 = forecastJSON["list"][fItems]["weather"][0]["id"].intValue
+            weatherDataModel.fConditionDay1 = forecastJSON["list"][forecastItems]["weather"][0]["id"].intValue
             
             weatherDataModel.fweatherIconNameDay1 = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.fConditionDay1)
             
-            day1Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][fItems]["dt_txt"].stringValue)!]
+            day1Label.text = weatherDataModel.dayNames[getDOW(from: forecastJSON["list"][forecastItems]["dt_txt"].stringValue)!]
             
 //            print("Forecast Day1 code is: \(weatherDataModel.fConditionDay1) for \(String(describing: day1Label.text))")
             
@@ -460,13 +480,17 @@ class WeatherViewController: UIViewController, CLLocationManagerDelegate, Change
     }
     
     //MARK: - Convert forecast date to day of week
-    func getDOW(from fdate: String) -> Int? {
+    func getDOW(from date: String) -> Int? {
         let formatter = DateFormatter()
-        let dateIndex = fdate.firstIndex(of: " ") ?? fdate.endIndex /*dateIndex sets the character that will split the date/time string (a space in this instance) */
-        let datePart = fdate[..<dateIndex] /*datePart stores the date part of the date/time string */
+        formatter.dateFormat = "yyyy-MM-dd"
+        let dateIndex = date.firstIndex(of: " ") ?? date.endIndex
+        /*:
+         dateIndex sets the character that will split the date/time string (a space in this instance)
+         */
+        let datePart = date[..<dateIndex]
+        // datePart stores the date part of the date/time string
 //        print (datePart)
 //        let datePart = extractDate(today)
-        formatter.dateFormat = "yyyy-MM-dd"
         guard let todayDate = formatter.date(from: String(datePart)) else {return nil}
         let myCalendar = Calendar(identifier: .gregorian)
         let weekDay = myCalendar.component(.weekday, from: todayDate)
